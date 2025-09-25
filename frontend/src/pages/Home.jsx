@@ -2,6 +2,9 @@ import { useState, useRef, useEffect } from "react"
 import { IoSend } from "react-icons/io5";
 import { AiOutlinePlus } from "react-icons/ai";
 import axios from "axios";
+import { LuAudioLines } from "react-icons/lu";
+import { BsFiletypePdf } from "react-icons/bs";
+import { MdOutlineFileUpload, MdCancel } from "react-icons/md";
 
 function Home() {
 
@@ -33,7 +36,7 @@ function Home() {
         const type = file.type;
         if (type.startsWith("image/") || type.startsWith("audio/") || type === "application/pdf") return true;
         return false;
-    };
+    }
     const updFiles = (e) => {
 
         //validation
@@ -46,7 +49,12 @@ function Home() {
 
         //updating files
         setFiles(old => [...old, ...validFiles]);
-    };
+    }
+
+    const removeFile = (tgt) => {
+        setFiles(old => old.filter((file, ind) => ind != tgt));
+    }
+
     const handleDragOver = (e) => {
         e.preventDefault();
         setDisplayDropItemsWrapper(true);
@@ -77,6 +85,34 @@ function Home() {
             <div className="flex flex-1 flex-col items-center justify-center gap-3 py-3" onDragOver={handleDragOver} onDrop={handleDrop}>
                 {/* welcome design */}
                 <h1 className="text-4xl mb-4">Welcome to NeonAI :D</h1>
+
+                {/* uploaded files */}
+                <div className="flex gap-2">
+                    {
+                        files.length > 0 &&
+                        files.map((file, ind) => {
+                            return (
+                                <div key={ind} className="relative flex justify-start items-center rounded-xl overflow-hidden">
+                                    {
+                                        (file.type.startsWith("image/")) ?
+                                            <img className="h-[60px] w-[80px] object-cover" src={URL.createObjectURL(file)} alt={file.name} />
+                                            :
+                                            <div className="h-[60px] w-[180px] bg-zinc-700 flex gap-2 items-center px-2">
+                                                <div className="bg-red-600 text-2xl p-1 rounded-lg">
+                                                    {file.type.startsWith("audio/") ? <LuAudioLines /> : <BsFiletypePdf /> }
+                                                </div>
+                                                <div className="text-start flex flex-col">
+                                                    <h1 className="text-sm">{file.name.length > 13 ? file.name.slice(0, 13) + "..." : file.name}</h1>
+                                                    <span className="text-[12px]">{file.type.startsWith("audio/") ? "Audio" : "PDF" }</span>
+                                                </div>
+                                            </div>
+                                    }
+                                    <button type="button" onClick={() => removeFile(ind)} className="absolute top-1 right-1 bg-black/50 text-white rounded-full bg-red-500 transition hover:cursor-pointer hover:bg-red-600"> <MdCancel className="text-zinc-700 text-xl" /> </button>
+                                </div>
+                            )
+                        })
+                    }
+                </div>
 
                 {/* input box */}
                 <form onSubmit={handleSubmit} className="bg-zinc-700 rounded-xl px-2 py-2 flex items-center gap-2 w-3/4">
