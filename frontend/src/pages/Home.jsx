@@ -4,7 +4,8 @@ import { AiOutlinePlus } from "react-icons/ai";
 import axios from "axios";
 import { LuAudioLines } from "react-icons/lu";
 import { BsFiletypePdf } from "react-icons/bs";
-import { MdOutlineFileUpload, MdCancel } from "react-icons/md";
+import { MdCancel } from "react-icons/md";
+import toast from "react-hot-toast";
 
 function Home() {
 
@@ -12,6 +13,14 @@ function Home() {
     const [files, setFiles] = useState([]);
     const addFilesRef = useRef(null);
     const [displayDropItemsWrapper, setDisplayDropItemsWrapper] = useState(false);
+
+    useEffect(() => {
+        const handleEscapeDuringDrop = (e) => {
+            if (e.key === "Escape" && displayDropItemsWrapper) setDisplayDropItemsWrapper(false);
+        }
+        window.addEventListener("keydown", handleEscapeDuringDrop);
+        return () => window.removeEventListener("keydown", handleEscapeDuringDrop);
+    }, [displayDropItemsWrapper]);
 
     const handleAddFiles = () => {
         addFilesRef.current.click();
@@ -26,11 +35,8 @@ function Home() {
         const payload = {
             input: userInput,
             files: files,
-            // images: images,
-            // docs: docs,
-            // audio : audio,
         }
-        // axios.post(import.meta.env.backendURL, payload);
+        // axios.post(import.meta.env.BACKEND_URL, payload);
     }
     const isValidFile = (file) => {
         const type = file.type;
@@ -43,7 +49,7 @@ function Home() {
         const selectedFiles = Array.from(e.target.files);
         const validFiles = selectedFiles.filter(file => isValidFile(file));
         if (validFiles.length < selectedFiles.length) {
-            alert("Only images, audio, and PDFs are allowed.");
+            toast.error("Only images, audio, and PDFs are allowed.");
             return;
         }
 
@@ -55,19 +61,17 @@ function Home() {
         setFiles(old => old.filter((file, ind) => ind != tgt));
     }
 
-    const handleDragOver = (e) => {
-        e.preventDefault();
-        setDisplayDropItemsWrapper(true);
-    }
+    const handleDragOver = (e) => { e.preventDefault(); setDisplayDropItemsWrapper(true); }
 
     const handleDrop = (e) => {
         e.preventDefault();
 
+        setDisplayDropItemsWrapper(false);
         //validate the dropped files
         const droppedFiles = Array.from(e.dataTransfer.files);
         const valid = droppedFiles.filter(isValidFile);
         if (valid.length < droppedFiles.length) {
-            alert("Only images, audio, and PDFs are allowed.");
+            toast.error("Only images, audio, and PDFs are allowed.");
             return;
         }
 
@@ -75,14 +79,20 @@ function Home() {
         setFiles((old) => [...old, ...valid]);
     };
 
+    //One error is that if file is dragged on and out then the wrapper remains. how to fix it?
     console.log(files);
 
     return (
         <>
-            <div className="absolute l-0 t-0 flex flex-1 flex-col items-center justify-center gap-3 py-3 bg-blue-400" hidden={!displayDropItemsWrapper}>
-
-            </div>
             <div className="flex flex-1 flex-col items-center justify-center gap-3 py-3" onDragOver={handleDragOver} onDrop={handleDrop}>
+
+                {/* Drag to Upload files wrapper (it is absolute and hidden too, doesnt effect flow of document)*/}
+                <div className="absolute top-0 left-0 flex flex-col gap-2 w-screen h-screen items-center justify-center bg-zinc-900/85 z-50" hidden={!displayDropItemsWrapper}>
+                    <img src="../../public/DragWrapperLogo.png" alt="Image" className="w-[200px] object-cover "/>
+                    <h1 className="text-3xl font-semibold text-white">Drop files</h1>
+                    <p className="text-md text-white">Drop the files in here to add them into active files</p>
+                </div>
+                
                 {/* welcome design */}
                 <h1 className="text-4xl mb-4">Welcome to NeonAI :D</h1>
 
@@ -95,15 +105,15 @@ function Home() {
                                 <div key={ind} className="relative flex justify-start items-center rounded-xl overflow-hidden">
                                     {
                                         (file.type.startsWith("image/")) ?
-                                            <img className="h-[60px] w-[80px] object-cover" src={URL.createObjectURL(file)} alt={file.name} />
+                                            <img className="h-[60px] w-[80px] object-cover" src={URL.createObjectURL(file)} alt={file.name} draggable={false}/>
                                             :
                                             <div className="h-[60px] w-[180px] bg-zinc-700 flex gap-2 items-center px-2">
                                                 <div className="bg-red-600 text-2xl p-1 rounded-lg">
-                                                    {file.type.startsWith("audio/") ? <LuAudioLines /> : <BsFiletypePdf /> }
+                                                    {file.type.startsWith("audio/") ? <LuAudioLines /> : <BsFiletypePdf />}
                                                 </div>
                                                 <div className="text-start flex flex-col">
                                                     <h1 className="text-sm">{file.name.length > 13 ? file.name.slice(0, 13) + "..." : file.name}</h1>
-                                                    <span className="text-[12px]">{file.type.startsWith("audio/") ? "Audio" : "PDF" }</span>
+                                                    <span className="text-[12px]">{file.type.startsWith("audio/") ? "Audio" : "PDF"}</span>
                                                 </div>
                                             </div>
                                     }

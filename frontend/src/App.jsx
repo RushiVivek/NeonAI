@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router'
 import Home from './pages/Home';
 import ErrorPage from './pages/ErrorPage';
 import Layout from './components/Layout';
+import ChatPage from './pages/ChatPage';
 
 function App() {
     const router = createBrowserRouter([
@@ -15,6 +16,11 @@ function App() {
                     element: <Home/>,
                     errorElement:<ErrorPage/>,
                 },
+                {
+                    path:"/c/:id",
+                    element: <ChatPage/>,
+                    errorElement:<ErrorPage/>,
+                }
             ]
         },
 
