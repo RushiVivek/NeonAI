@@ -84,10 +84,10 @@ function Home() {
 
     return (
         <>
-            <div className="flex flex-1 flex-col items-center justify-center gap-3 py-3" onDragOver={handleDragOver} onDrop={handleDrop}>
+            <div className="flex min-h-screen flex-grow flex-col items-center justify-center gap-3 py-3 pt-[50px]" onDragOver={handleDragOver} onDrop={handleDrop}>
 
                 {/* Drag to Upload files wrapper (it is absolute and hidden too, doesnt effect flow of document)*/}
-                <div className="absolute top-0 left-0 flex flex-col gap-2 w-screen h-screen items-center justify-center bg-zinc-900/85 z-50" hidden={!displayDropItemsWrapper}>
+                <div className="absolute top-0 left-0 flex flex-col gap-2 w-full h-full items-center justify-center bg-zinc-900/85 z-50" hidden={!displayDropItemsWrapper}>
                     <img src="../../public/DragWrapperLogo.png" alt="Image" className="w-[200px] object-cover "/>
                     <h1 className="text-3xl font-semibold text-white">Drop files</h1>
                     <p className="text-md text-white">Drop the files in here to add them into active files</p>

@@ -4,7 +4,7 @@ import { Link } from "react-router";
 
 function Navbar() {
     return (
-        <div className="px-5 flex py-2 justify-between bg-zinc-900">
+        <div className="z-50 fixed top-0 left-0 w-full px-5 flex py-2 justify-between bg-zinc-900">
             <Link className='text-2xl text-gray-200 font-semibold' to="/">NeonAI</Link>
             <button><MdDarkMode className="text-2xl"/></button>
             {/* <button><MdOutlineLightMode /></button> */}
