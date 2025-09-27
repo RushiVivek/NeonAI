@@ -44,7 +44,7 @@ function ChatPage() {
         setUserInput("");
 
         try {
-            // Replace the URL below with your backend endpoint
+            // we have to replace the URL below with your backend endpoint
             const res = await axios.post("http://localhost:5000/chat", payload); // <-- paste correct link
             const aiMessage = { id: Date.now() + 1, sender: "ai", text: res.data.reply };
             setMessages(prev => [...prev, aiMessage]);
