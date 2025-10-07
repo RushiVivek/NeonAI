@@ -6,13 +6,53 @@ import { LuAudioLines } from "react-icons/lu";
 import { BsFiletypePdf } from "react-icons/bs";
 import { MdCancel } from "react-icons/md";
 import toast from "react-hot-toast";
+import { useLocation, useParams } from "react-router";
 
 function ChatPage() {
+    const id = useParams(); //use id to fetch history of current chat page.
+    const location = useLocation();
     const [messages, setMessages] = useState([]);
     const [userInput, setUserInput] = useState("");
     const [files, setFiles] = useState([]);
     const addFilesRef = useRef(null);
     const [displayDropItemsWrapper, setDisplayDropItemsWrapper] = useState(false);
+
+    useEffect(() => {
+        const fetch = async () => {
+            //reset all params when changing the chat
+            setMessages([]);
+            setFiles([]);
+            setUserInput("");
+            
+            //send req to backend to fetch the message history and active files.
+            if (location.state && messages.length === 0) {
+                const data = location.state; // Retrieve the passed data
+                if (data?.input) {
+                    const newUserMessage = { id: Date.now(), sender: "user", text: data.input };
+                    setMessages(prev => [...prev, newUserMessage]);
+                    const payload = {
+                        input: data.input,
+                        files: data.files,
+                    };
+                    try {
+                        // we have to replace the URL below with your backend endpoint
+                        const res = await axios.post("http://localhost:5000/chat", payload); // <-- paste correct link
+                        const aiMessage = { id: Date.now() + 1, sender: "ai", text: res.data.reply };
+                        setMessages(prev => [...prev, aiMessage]);
+                    } catch (err) {
+                        const aiMessage = { id: Date.now() + 1, sender: "ai", text: "try again later" };
+                        setMessages(prev => [...prev, aiMessage]);
+                        console.error(err);
+                        toast.error("Error fetching response from AI");
+                    }
+                }
+            } else {
+                // Fetch data based on id
+                toast.error("Need to fetch message history.");
+            }
+        }
+        fetch();
+    }, [id, location.state])
 
     useEffect(() => {
         const handleEscapeDuringDrop = (e) => {
@@ -49,20 +89,12 @@ function ChatPage() {
             const aiMessage = { id: Date.now() + 1, sender: "ai", text: res.data.reply };
             setMessages(prev => [...prev, aiMessage]);
         } catch (err) {
+            const aiMessage = { id: Date.now() + 1, sender: "ai", text: "try again later" };
+            setMessages(prev => [...prev, aiMessage]);
             console.error(err);
             toast.error("Error fetching response from AI");
         }
     };
-    // const handleSubmit = (e) => {
-    //     e.preventDefault();
-    //     if (userInput.length === 0) return;
-    //     //generate a seperate chat and navigate to it.
-    //     const payload = {
-    //         input: userInput,
-    //         files: files,
-    //     }
-    //     // axios.post(import.meta.env.BACKEND_URL, payload);
-    // }
     const isValidFile = (file) => {
         const type = file.type;
         if (type.startsWith("image/") || type.startsWith("audio/") || type === "application/pdf") return true;
@@ -106,6 +138,7 @@ function ChatPage() {
 
     //One error is that if file is dragged on and out then the wrapper remains. how to fix it?
     console.log(files);
+    console.log(messages);
 
     return (
         <>
@@ -120,25 +153,24 @@ function ChatPage() {
 
                 {/* chat exchange */}
                 <div className="flex flex-col px-4 w-full max-w-3xl pt-[50px] pb-[80px] gap-3 overflow-y-auto mx-auto">
-                {messages.map((msg) => (
-                    <div
-                    key={msg.id}
-                    className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
-                    >
-                    <div
-                        className={`max-w-[70%] px-4 py-2 rounded-xl ${
-                        msg.sender === "user"
-                            ? "bg-blue-600 text-white"
-                            : "bg-zinc-700 text-white"
-                        }`}
-                    >
-                        {msg.text}
-                    </div>
-                    </div>
-                ))}
+                    {messages.map((msg) => (
+                        <div
+                            key={msg.id}
+                            className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
+                        >
+                            <div
+                                className={`max-w-[70%] px-4 py-2 rounded-xl ${msg.sender === "user"
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-zinc-700 text-white"
+                                    }`}
+                            >
+                                {msg.text}
+                            </div>
+                        </div>
+                    ))}
                 </div>
 
-                <div className="fixed bottom-0 pb-2 w-3/4 flex flex-col items-center gap-2 rounded-lg " style={{backgroundColor:"#242424"}}>
+                <div className="fixed bottom-0 pb-2 w-3/4 flex flex-col items-center gap-2 rounded-lg " style={{ backgroundColor: "#242424" }}>
 
                     {/* uploaded files */}
                     <div className="flex gap-2 justify-self-end pt-1">

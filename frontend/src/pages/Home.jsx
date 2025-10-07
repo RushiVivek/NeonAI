@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react"
+import { useNavigate } from "react-router";
 import { IoSend } from "react-icons/io5";
 import { AiOutlinePlus } from "react-icons/ai";
 import axios from "axios";
@@ -13,6 +14,7 @@ function Home() {
     const [files, setFiles] = useState([]);
     const addFilesRef = useRef(null);
     const [displayDropItemsWrapper, setDisplayDropItemsWrapper] = useState(false);
+    const nav = useNavigate();
 
     useEffect(() => {
         const handleEscapeDuringDrop = (e) => {
@@ -30,12 +32,15 @@ function Home() {
     }
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (userInput.length === 0) return;
-        //generate a seperate chat and navigate to it.
+        if (!userInput.trim()) return;
+        //generate a seperate chat and navigate to it also send the users message.
         const payload = {
             input: userInput,
             files: files,
         }
+        const id = 10; //randomly generate this id later
+        nav(`/c/${id}`, {state: payload});
+
         // axios.post(import.meta.env.BACKEND_URL, payload);
     }
     const isValidFile = (file) => {

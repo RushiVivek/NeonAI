@@ -4,32 +4,49 @@ import { LuAudioLines } from "react-icons/lu";
 import { BsFiletypePdf } from "react-icons/bs";
 import { MdCancel } from "react-icons/md";
 import axios from "axios";
-import { Link } from "react-router";
+import { Link, useLocation, useParams } from "react-router";
+import toast from "react-hot-toast";
 
 function Sidebar({ setShowSidebar, showSidebar }) {
 
-    const [files, setFiles] = useState([]);
+    const id = useParams();
+    const [activeFiles, setActiveFiles] = useState([]);
+    const location = useLocation();
 
     useEffect(() => {
         //send req to backend to request the active files.
-        const fetchData = async () => {
-            // try{
-            //     const data = await axios.get(...);
-            //     setFiles(data.res);
-            // }catch(err){
-            //     console.log(err);
-            //     toast.error("Something went wrong!");
-            // }finally{
+        const fetch = async () => {
+            //reset all params when changing the chat
+            setActiveFiles([]);
 
-            // }
+            //send req to backend to fetch the message history and active files.
+            if (location.state && activeFiles.length === 0) {
+                const data = location.state; // Retrieve the passed data
+                if (data?.files) {
+                    setActiveFiles([...data.files]);
+                }
+            } else {
+                // Fetch data based on id
+                // try{
+                //     const data = await axios.get(...);
+                //     setActiveFiles(data.res);
+                // }catch(err){
+                //     console.log(err);
+                //     toast.error("Something went wrong!");
+                // }finally{
+                // }
+                toast.error("Need to fetch active files.");
+            }
         }
-        fetchData();
-    })
+        if(id?.id) fetch();
+    }, [id, location.state]);
+
+    console.log(id);
 
     const removeFile = (tgt) => {
         //also send a deletion request to the backend.
         //axios.post(import.meta.env.BACKEND_URL/someRoute_method=DELETE, payload);
-        setFiles(old => old.filter((file, ind) => ind != tgt));
+        setActiveFiles(old => old.filter((file, ind) => ind != tgt));
     }
 
     return (
@@ -50,36 +67,39 @@ function Sidebar({ setShowSidebar, showSidebar }) {
                 {/* sidebar contents */}
                 <>
                     <div className={`h-full transition-all duration-300 ${showSidebar ? "opacity-100" : "opacity-0"} `}>
-                        <div className="min-h-2/5 w-full">
-                            <h1 className="text-lg">Currently active files:</h1>
-                            {/* HOPEFULLY THIS WORKS WELL, I HAVENT TESTED THIS YET.  */}
-                            <div className="flex flex-col gap-1">
-                                {
-                                    files.length > 0 &&
-                                    files.map((file, ind) => {
-                                        return (
-                                            <div key={ind} className="relative flex justify-start items-center rounded-xl overflow-hidden">
-                                                {
-                                                    (file.type.startsWith("image/")) ?
-                                                        <img className="h-[60px] w-[80px] object-cover" src={URL.createObjectURL(file)} alt={file.name} draggable={false} />
-                                                        :
-                                                        <div className="h-[60px] w-[180px] bg-zinc-700 flex gap-2 items-center px-2">
-                                                            <div className="bg-red-600 text-2xl p-1 rounded-lg">
-                                                                {file.type.startsWith("audio/") ? <LuAudioLines /> : <BsFiletypePdf />}
+                        {
+                            id?.id &&
+                            <div className="min-h-2/5 w-full">
+                                <h1 className="text-lg">Currently active files:</h1>
+                                {/* HOPEFULLY THIS WORKS WELL, I HAVENT TESTED THIS YET.  */}
+                                <div className="flex flex-col gap-2">
+                                    {
+                                        activeFiles.length > 0 &&
+                                        activeFiles.map((file, ind) => {
+                                            return (
+                                                <div key={ind} className="relative flex justify-start items-center rounded-xl overflow-hidden">
+                                                    {
+                                                        (file.type.startsWith("image/")) ?
+                                                            <img className="h-[60px] w-[80px] object-cover" src={URL.createObjectURL(file)} alt={file.name} draggable={false} />
+                                                            :
+                                                            <div className="h-[60px] w-[180px] bg-zinc-700 flex gap-2 items-center px-2">
+                                                                <div className="bg-red-600 text-2xl p-1 rounded-lg">
+                                                                    {file.type.startsWith("audio/") ? <LuAudioLines /> : <BsFiletypePdf />}
+                                                                </div>
+                                                                <div className="text-start flex flex-col">
+                                                                    <h1 className="text-sm">{file.name.length > 13 ? file.name.slice(0, 13) + "..." : file.name}</h1>
+                                                                    <span className="text-[12px]">{file.type.startsWith("audio/") ? "Audio" : "PDF"}</span>
+                                                                </div>
                                                             </div>
-                                                            <div className="text-start flex flex-col">
-                                                                <h1 className="text-sm">{file.name.length > 13 ? file.name.slice(0, 13) + "..." : file.name}</h1>
-                                                                <span className="text-[12px]">{file.type.startsWith("audio/") ? "Audio" : "PDF"}</span>
-                                                            </div>
-                                                        </div>
-                                                }
-                                                <button type="button" onClick={() => removeFile(ind)} className="absolute top-1 right-1 bg-black/50 text-white rounded-full bg-red-500 transition hover:cursor-pointer hover:bg-red-600"> <MdCancel className="text-zinc-700 text-xl" /> </button>
-                                            </div>
-                                        )
-                                    })
-                                }
+                                                    }
+                                                    <button type="button" onClick={() => removeFile(ind)} className="absolute top-1 right-1 bg-black/50 text-white rounded-full bg-red-500 transition hover:cursor-pointer hover:bg-red-600"> <MdCancel className="text-zinc-700 text-xl" /> </button>
+                                                </div>
+                                            )
+                                        })
+                                    }
+                                </div>
                             </div>
-                        </div>
+                        }
                         <div className="w-full text-left">
                             <h1 className="text-lg ">Chats: </h1>
                             <div className="flex flex-col gap-1">

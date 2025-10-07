@@ -5,7 +5,9 @@ import App from './App.jsx'
 import { Toaster } from 'react-hot-toast'
 
 createRoot(document.getElementById('root')).render(
-    <StrictMode>
+    //removed strict mode as it will render the components twice
+    // <StrictMode>
+    <>
         <Toaster
             position='top-center'
             containerStyle={{ marginTop: '1rem' }}
@@ -40,5 +42,6 @@ createRoot(document.getElementById('root')).render(
             }}
         />
         <App />
-    </StrictMode>,
+    </>
+    // </StrictMode>
 )
