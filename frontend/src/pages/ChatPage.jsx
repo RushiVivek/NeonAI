@@ -6,9 +6,10 @@ import { LuAudioLines } from "react-icons/lu";
 import { BsFiletypePdf } from "react-icons/bs";
 import { MdCancel } from "react-icons/md";
 import toast from "react-hot-toast";
-import { useLocation, useParams } from "react-router";
+import { useLocation, useOutletContext, useParams } from "react-router";
 
 function ChatPage() {
+
     const id = useParams(); //use id to fetch history of current chat page.
     const location = useLocation();
     const [messages, setMessages] = useState([]);
@@ -16,6 +17,7 @@ function ChatPage() {
     const [files, setFiles] = useState([]);
     const addFilesRef = useRef(null);
     const [displayDropItemsWrapper, setDisplayDropItemsWrapper] = useState(false);
+    const { setAllActiveFiles, isProcessing, setIsProcessing } = useOutletContext();
 
     useEffect(() => {
         const fetch = async () => {
@@ -23,7 +25,6 @@ function ChatPage() {
             setMessages([]);
             setFiles([]);
             setUserInput("");
-            
             //send req to backend to fetch the message history and active files.
             if (location.state && messages.length === 0) {
                 const data = location.state; // Retrieve the passed data
@@ -44,13 +45,17 @@ function ChatPage() {
                         setMessages(prev => [...prev, aiMessage]);
                         console.error(err);
                         toast.error("Error fetching response from AI");
+                    }finally{
+                        setIsProcessing(false);
                     }
                 }
             } else {
                 // Fetch data based on id
                 toast.error("Need to fetch message history.");
+                setIsProcessing(false);
             }
         }
+        setIsProcessing(true);
         fetch();
     }, [id, location.state])
 
@@ -70,20 +75,24 @@ function ChatPage() {
     }
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!userInput.trim()) return;
-
-        // push user message
-        const newUserMessage = { id: Date.now(), sender: "user", text: userInput };
-        setMessages(prev => [...prev, newUserMessage]);
-
-        const payload = {
-            input: userInput,
-            files: files,
-        };
-
-        setUserInput("");
+        if (!userInput.trim() || isProcessing) return;
+        setIsProcessing(true);
 
         try {
+            // push user message
+            const newUserMessage = { id: Date.now(), sender: "user", text: userInput };
+            setMessages(prev => [...prev, newUserMessage]);
+
+            //reset values and update sidebar files
+            setUserInput("");
+            setFiles([]);
+            setAllActiveFiles(old => [...old, ...files]);
+
+            const payload = {
+                input: userInput,
+                files: files,
+            };
+
             // we have to replace the URL below with your backend endpoint
             const res = await axios.post("http://localhost:5000/chat", payload); // <-- paste correct link
             const aiMessage = { id: Date.now() + 1, sender: "ai", text: res.data.reply };
@@ -93,8 +102,10 @@ function ChatPage() {
             setMessages(prev => [...prev, aiMessage]);
             console.error(err);
             toast.error("Error fetching response from AI");
+        } finally {
+            setIsProcessing(false);
         }
-    };
+    }
     const isValidFile = (file) => {
         const type = file.type;
         if (type.startsWith("image/") || type.startsWith("audio/") || type === "application/pdf") return true;
@@ -137,8 +148,6 @@ function ChatPage() {
     };
 
     //One error is that if file is dragged on and out then the wrapper remains. how to fix it?
-    console.log(files);
-    console.log(messages);
 
     return (
         <>
@@ -217,7 +226,7 @@ function ChatPage() {
                         <input type="text" name="userInput" id="userInput" className="flex-1 outline-none" onChange={updInput} value={userInput} />
 
                         <div className="relative group inline-block">
-                            <button className="text-lg rounded-sm p-1 hover:cursor-pointer hover:bg-zinc-600">
+                            <button className="text-lg rounded-sm p-1 hover:cursor-pointer hover:bg-zinc-600" >
                                 <IoSend />
                             </button>
                             <span className="absolute left-1/2 -translate-y-15 -translate-x-1/2 mt-1 hidden group-hover:block bg-zinc-900/60 text-white text-[13px] px-2 py-1 rounded">

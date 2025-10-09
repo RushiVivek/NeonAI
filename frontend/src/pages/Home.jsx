@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react"
-import { useNavigate } from "react-router";
+import { useNavigate, useOutletContext } from "react-router";
 import { IoSend } from "react-icons/io5";
 import { AiOutlinePlus } from "react-icons/ai";
 import axios from "axios";
@@ -15,6 +15,7 @@ function Home() {
     const addFilesRef = useRef(null);
     const [displayDropItemsWrapper, setDisplayDropItemsWrapper] = useState(false);
     const nav = useNavigate();
+    const { setAllActiveFiles } = useOutletContext();
 
     useEffect(() => {
         const handleEscapeDuringDrop = (e) => {
@@ -24,25 +25,28 @@ function Home() {
         return () => window.removeEventListener("keydown", handleEscapeDuringDrop);
     }, [displayDropItemsWrapper]);
 
-    const handleAddFiles = () => {
-        addFilesRef.current.click();
-    }
-    const updInput = (e) => {
-        setUserInput(e.target.value);
-    }
+    const updInput = (e) => { setUserInput(e.target.value); }
+    
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!userInput.trim()) return;
+        
         //generate a seperate chat and navigate to it also send the users message.
         const payload = {
             input: userInput,
             files: files,
         }
-        const id = 10; //randomly generate this id later
-        nav(`/c/${id}`, {state: payload});
-
         // axios.post(import.meta.env.BACKEND_URL, payload);
+        
+        const id = Math.floor(Math.random() * 100000);
+        setAllActiveFiles([...files]);
+        nav(`/c/${id}`, {state:payload});
     }
+    
+    //files upload and removing handling
+
+    const handleAddFiles = () => { addFilesRef.current.click(); }
+
     const isValidFile = (file) => {
         const type = file.type;
         if (type.startsWith("image/") || type.startsWith("audio/") || type === "application/pdf") return true;
@@ -62,9 +66,9 @@ function Home() {
         setFiles(old => [...old, ...validFiles]);
     }
 
-    const removeFile = (tgt) => {
-        setFiles(old => old.filter((file, ind) => ind != tgt));
-    }
+    const removeFile = (tgt) => { setFiles(old => old.filter((file, ind) => ind != tgt)); }
+
+    //drag and drop of files
 
     const handleDragOver = (e) => { e.preventDefault(); setDisplayDropItemsWrapper(true); }
 
@@ -85,7 +89,6 @@ function Home() {
     };
 
     //One error is that if file is dragged on and out then the wrapper remains. how to fix it?
-    console.log(files);
 
     return (
         <>
@@ -93,11 +96,11 @@ function Home() {
 
                 {/* Drag to Upload files wrapper (it is absolute and hidden too, doesnt effect flow of document)*/}
                 <div className="absolute top-0 left-0 flex flex-col gap-2 w-full h-full items-center justify-center bg-zinc-900/85 z-50" hidden={!displayDropItemsWrapper}>
-                    <img src="../../public/DragWrapperLogo.png" alt="Image" className="w-[200px] object-cover "/>
+                    <img src="../../public/DragWrapperLogo.png" alt="Image" className="w-[200px] object-cover " />
                     <h1 className="text-3xl font-semibold text-white">Drop files</h1>
                     <p className="text-md text-white">Drop the files in here to add them into active files</p>
                 </div>
-                
+
                 {/* welcome design */}
                 <h1 className="text-4xl mb-4">Welcome to NeonAI :D</h1>
 
@@ -110,7 +113,7 @@ function Home() {
                                 <div key={ind} className="relative flex justify-start items-center rounded-xl overflow-hidden">
                                     {
                                         (file.type.startsWith("image/")) ?
-                                            <img className="h-[60px] w-[80px] object-cover" src={URL.createObjectURL(file)} alt={file.name} draggable={false}/>
+                                            <img className="h-[60px] w-[80px] object-cover" src={URL.createObjectURL(file)} alt={file.name} draggable={false} />
                                             :
                                             <div className="h-[60px] w-[180px] bg-zinc-700 flex gap-2 items-center px-2">
                                                 <div className="bg-red-600 text-2xl p-1 rounded-lg">

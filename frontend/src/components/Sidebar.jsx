@@ -6,52 +6,33 @@ import { MdCancel } from "react-icons/md";
 import axios from "axios";
 import { Link, useLocation, useParams } from "react-router";
 import toast from "react-hot-toast";
+import { MdExpandLess, MdExpandMore } from "react-icons/md";
+import { PiNotePencilDuotone } from "react-icons/pi";
 
-function Sidebar({ setShowSidebar, showSidebar }) {
+function Sidebar({ setShowSidebar, showSidebar, allActiveFiles, setAllActiveFiles, isProcessing, setIsProcessing }) {
 
     const id = useParams();
-    const [activeFiles, setActiveFiles] = useState([]);
-    const location = useLocation();
+    const [showAllChats, setShowAllChats] = useState(true);
+    const [showAllActiveFiles, setShowAllActiveFiles] = useState(true);
 
-    useEffect(() => {
-        //send req to backend to request the active files.
-        const fetch = async () => {
-            //reset all params when changing the chat
-            setActiveFiles([]);
+    //No need to fetch anything HERE, the showAllActiveFiles will get updated in outlet (chat page) and hence active files will be fetched there
 
-            //send req to backend to fetch the message history and active files.
-            if (location.state && activeFiles.length === 0) {
-                const data = location.state; // Retrieve the passed data
-                if (data?.files) {
-                    setActiveFiles([...data.files]);
-                }
-            } else {
-                // Fetch data based on id
-                // try{
-                //     const data = await axios.get(...);
-                //     setActiveFiles(data.res);
-                // }catch(err){
-                //     console.log(err);
-                //     toast.error("Something went wrong!");
-                // }finally{
-                // }
-                toast.error("Need to fetch active files.");
-            }
+    const removeFile = async (tgt) => {
+        if (isProcessing) return;
+        setIsProcessing(true);
+        try {
+            const res = await axios.post(`${import.meta.env.BACKEND_URL}/usersChat/fileID_method=DELETE`);
+        } catch (err) {
+            // toast.error("Oops something went wrong deleting the file");
+            // console.log(err.details);
+        } finally {
+            setAllActiveFiles(old => old.filter((file, ind) => ind != tgt));
+            setIsProcessing(false);
         }
-        if(id?.id) fetch();
-    }, [id, location.state]);
-
-    console.log(id);
-
-    const removeFile = (tgt) => {
-        //also send a deletion request to the backend.
-        //axios.post(import.meta.env.BACKEND_URL/someRoute_method=DELETE, payload);
-        setActiveFiles(old => old.filter((file, ind) => ind != tgt));
     }
 
     return (
         <>
-
             <div className={`fixed top-12 left-0 h-full z-50 pt-3 px-2 flex items-start justify-start flex-col transition-all duration-300 w-[250px] ${showSidebar ? "translate-x-0" : "-translate-x-52"} bg-zinc-900/90`}>
 
                 {/* sidebar toggle button */}
@@ -66,53 +47,68 @@ function Sidebar({ setShowSidebar, showSidebar }) {
 
                 {/* sidebar contents */}
                 <>
-                    <div className={`h-full transition-all duration-300 ${showSidebar ? "opacity-100" : "opacity-0"} `}>
+                    <div className={`h-full transition-all text-left flex flex-col gap-3 duration-300 ${showSidebar ? "opacity-100" : "opacity-0"} `}>
+                        <Link to="/" className="text-lg flex items-center gap-1"> <PiNotePencilDuotone /> New Chat</Link>
                         {
                             id?.id &&
-                            <div className="min-h-2/5 w-full">
-                                <h1 className="text-lg">Currently active files:</h1>
-                                {/* HOPEFULLY THIS WORKS WELL, I HAVENT TESTED THIS YET.  */}
-                                <div className="flex flex-col gap-2">
-                                    {
-                                        activeFiles.length > 0 &&
-                                        activeFiles.map((file, ind) => {
-                                            return (
-                                                <div key={ind} className="relative flex justify-start items-center rounded-xl overflow-hidden">
-                                                    {
-                                                        (file.type.startsWith("image/")) ?
-                                                            <img className="h-[60px] w-[80px] object-cover" src={URL.createObjectURL(file)} alt={file.name} draggable={false} />
-                                                            :
-                                                            <div className="h-[60px] w-[180px] bg-zinc-700 flex gap-2 items-center px-2">
-                                                                <div className="bg-red-600 text-2xl p-1 rounded-lg">
-                                                                    {file.type.startsWith("audio/") ? <LuAudioLines /> : <BsFiletypePdf />}
-                                                                </div>
+                            <div className="w-full">
+                                <h1 className="text-lg text-zinc-400 flex items-center hover:cursor-pointer" onClick={() => setShowAllActiveFiles(old => !old)}>
+                                    Active files {showAllActiveFiles ? <MdExpandLess /> : <MdExpandMore />}
+                                </h1>
+                                {
+                                    showAllActiveFiles &&
+                                    <div className="flex flex-col gap-2">
+                                        {
+                                            allActiveFiles.length > 0 &&
+                                            allActiveFiles.map((file, ind) => {
+                                                return (
+                                                    <div key={ind} className="relative flex justify-start group items-center rounded-xl">
+                                                        <div className="relative group inline-block">
+                                                            <div className="h-[60px] w-[220px] bg-zinc-700 flex gap-2 items-center px-2 rounded-lg">
+                                                                {
+                                                                    (file.type.startsWith("image/")) ?
+                                                                        <img className="h-[55px] w-[80px] object-cover" src={URL.createObjectURL(file)} alt={file.name} draggable={false} />
+                                                                        :
+                                                                        <div className="bg-red-600 text-2xl p-1 rounded-lg">
+                                                                            {file.type.startsWith("audio/") ? <LuAudioLines /> : <BsFiletypePdf />}
+                                                                        </div>
+                                                                }
                                                                 <div className="text-start flex flex-col">
                                                                     <h1 className="text-sm">{file.name.length > 13 ? file.name.slice(0, 13) + "..." : file.name}</h1>
-                                                                    <span className="text-[12px]">{file.type.startsWith("audio/") ? "Audio" : "PDF"}</span>
+                                                                    <span className="text-[12px]">
+                                                                        {file.type.startsWith("audio/") ? "Audio" : file.type.startsWith("image/") ? "Image" : "PDF"}
+                                                                    </span>
                                                                 </div>
                                                             </div>
-                                                    }
-                                                    <button type="button" onClick={() => removeFile(ind)} className="absolute top-1 right-1 bg-black/50 text-white rounded-full bg-red-500 transition hover:cursor-pointer hover:bg-red-600"> <MdCancel className="text-zinc-700 text-xl" /> </button>
-                                                </div>
-                                            )
-                                        })
-                                    }
-                                </div>
+                                                            <button type="button" onClick={() => removeFile(ind)} className="absolute top-1 right-1 bg-black/50 text-white rounded-full bg-red-500 transition hover:cursor-pointer hover:bg-red-600" disabled={isProcessing}> <MdCancel className="text-zinc-700 text-xl" /> </button>
+                                                            <span className="absolute right-0 -translate-y-10 translate-x-20 mt-1 hidden group-hover:block bg-zinc-900 text-white text-[13px] px-2 py-1 min-w-[90px] rounded">
+                                                                {file.name}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })
+                                        }
+                                    </div>
+                                }
                             </div>
                         }
-                        <div className="w-full text-left">
-                            <h1 className="text-lg ">Chats: </h1>
-                            <div className="flex flex-col gap-1">
-                                <Link className="text-sm" to="/c/1">display chat1</Link>
-                                <Link className="text-sm" to="/c/2">display chat2</Link>
-                                <Link className="text-sm" to="/c/3">display chat3</Link>
-                                <Link className="text-sm" to="/c/4">display chat4</Link>
-                            </div>
+                        <div className="w-full">
+                            <h1 className="text-lg text-zinc-400 hover:cursor-pointer flex items-center" onClick={() => setShowAllChats(old => !old)}>
+                                Chats {showAllChats ? <MdExpandLess /> : <MdExpandMore />}
+                            </h1>
+                            {
+                                showAllChats &&
+                                <div className="flex flex-col gap-1">
+                                    <Link className="text-sm" to="/c/1">display chat1</Link>
+                                    <Link className="text-sm" to="/c/2">display chat2</Link>
+                                    <Link className="text-sm" to="/c/3">display chat3</Link>
+                                    <Link className="text-sm" to="/c/4">display chat4</Link>
+                                </div>
+                            }
                         </div>
                     </div>
-
                 </>
-
             </div>
         </>
     )
