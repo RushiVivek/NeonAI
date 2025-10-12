@@ -33,7 +33,7 @@ function Sidebar({ setShowSidebar, showSidebar, allActiveFiles, setAllActiveFile
 
     return (
         <>
-            <div className={`fixed top-12 left-0 h-full z-50 pt-3 px-2 flex items-start justify-start flex-col transition-all duration-300 w-[250px] ${showSidebar ? "translate-x-0" : "-translate-x-52"} bg-zinc-900/90`}>
+            <div className={`fixed top-0 left-0 h-full z-20 pt-15 px-2 flex items-start justify-start flex-col transition-all duration-300 w-[250px] ${showSidebar ? "translate-x-0" : "-translate-x-52"} bg-zinc-900/90  ${!showSidebar ? "overflow-y-hidden" : "overflow-x-hidden overflow-y-scroll"}`}>
 
                 {/* sidebar toggle button */}
                 <div className="relative group inline-block self-end">
@@ -93,7 +93,7 @@ function Sidebar({ setShowSidebar, showSidebar, allActiveFiles, setAllActiveFile
                                 }
                             </div>
                         }
-                        <div className="w-full">
+                        <div className="w-full pb-3">
                             <h1 className="text-lg text-zinc-400 hover:cursor-pointer flex items-center" onClick={() => setShowAllChats(old => !old)}>
                                 Chats {showAllChats ? <MdExpandLess /> : <MdExpandMore />}
                             </h1>

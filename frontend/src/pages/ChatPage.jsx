@@ -22,6 +22,7 @@ function ChatPage() {
     useEffect(() => {
         const fetch = async () => {
             //reset all params when changing the chat
+            setAllActiveFiles([]);
             setMessages([]);
             setFiles([]);
             setUserInput("");
@@ -31,6 +32,7 @@ function ChatPage() {
                 if (data?.input) {
                     const newUserMessage = { id: Date.now(), sender: "user", text: data.input };
                     setMessages(prev => [...prev, newUserMessage]);
+                    setAllActiveFiles([...data.files]);
                     const payload = {
                         input: data.input,
                         files: data.files,

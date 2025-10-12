@@ -15,7 +15,6 @@ function Home() {
     const addFilesRef = useRef(null);
     const [displayDropItemsWrapper, setDisplayDropItemsWrapper] = useState(false);
     const nav = useNavigate();
-    const { setAllActiveFiles } = useOutletContext();
 
     useEffect(() => {
         const handleEscapeDuringDrop = (e) => {
@@ -39,7 +38,6 @@ function Home() {
         // axios.post(import.meta.env.BACKEND_URL, payload);
         
         const id = Math.floor(Math.random() * 100000);
-        setAllActiveFiles([...files]);
         nav(`/c/${id}`, {state:payload});
     }
     
