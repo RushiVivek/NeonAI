@@ -15,51 +15,53 @@ function ChatPage() {
     const [messages, setMessages] = useState([]);
     const [userInput, setUserInput] = useState("");
     const [files, setFiles] = useState([]);
+    const [allfiles, setAllFiles] = useState([]);
     const addFilesRef = useRef(null);
     const [displayDropItemsWrapper, setDisplayDropItemsWrapper] = useState(false);
-    const { setAllActiveFiles, isProcessing, setIsProcessing } = useOutletContext();
+    const { allActiveFiles, setAllActiveFiles, isProcessing, setIsProcessing } = useOutletContext();
 
-    useEffect(() => {
-        const fetch = async () => {
-            //reset all params when changing the chat
-            setAllActiveFiles([]);
-            setMessages([]);
-            setFiles([]);
-            setUserInput("");
-            //send req to backend to fetch the message history and active files.
-            if (location.state && messages.length === 0) {
-                const data = location.state; // Retrieve the passed data
-                if (data?.input) {
-                    const newUserMessage = { id: Date.now(), sender: "user", text: data.input };
-                    setMessages(prev => [...prev, newUserMessage]);
-                    setAllActiveFiles([...data.files]);
-                    const payload = {
-                        input: data.input,
-                        files: data.files,
-                    };
-                    try {
-                        // we have to replace the URL below with your backend endpoint
-                        const res = await axios.post("http://localhost:5000/chat", payload); // <-- paste correct link
-                        const aiMessage = { id: Date.now() + 1, sender: "ai", text: res.data.reply };
-                        setMessages(prev => [...prev, aiMessage]);
-                    } catch (err) {
-                        const aiMessage = { id: Date.now() + 1, sender: "ai", text: "try again later" };
-                        setMessages(prev => [...prev, aiMessage]);
-                        console.error(err);
-                        toast.error("Error fetching response from AI");
-                    }finally{
-                        setIsProcessing(false);
-                    }
-                }
-            } else {
-                // Fetch data based on id
-                toast.error("Need to fetch message history.");
-                setIsProcessing(false);
-            }
-        }
-        setIsProcessing(true);
-        fetch();
-    }, [id, location.state])
+    // useEffect(() => {
+    //     const fetch = async () => {
+    //         //reset all params when changing the chat
+    //         setAllActiveFiles([]);
+    //         setMessages([]);
+    //         setFiles([]);
+    //         setUserInput("");
+    //         //send req to backend to fetch the message history and active files.
+    //         if (location.state && messages.length === 0) {
+    //             const data = location.state; // Retrieve the passed data
+    //             if (data?.input) {
+    //                 const newUserMessage = { id: Date.now(), sender: "user", text: data.input };
+    //                 setMessages(prev => [...prev, newUserMessage]);
+    //                 setAllActiveFiles([...data.files]);
+    //                 const data = new FormData();
+    //                 data.append("data", JSON.stringify({ input: data.input }));
+    //                 data.files.forEach((file, ind) => {
+    //                     data.append(`file_${ind}`, file);
+    //                 });
+    //                 try {
+    //                     // we have to replace the URL below with your backend endpoint
+    //                     const res = await axios.post("http://127.0.0.1:8000/api/query/", data, {headers: { "Content-Type": "multipart/form-data" }});
+    //                     const aiMessage = { id: Date.now() + 1, sender: "ai", text: res.data.reply };
+    //                     setMessages(prev => [...prev, aiMessage]);
+    //                 } catch (err) {
+    //                     const aiMessage = { id: Date.now() + 1, sender: "ai", text: "try again later" };
+    //                     setMessages(prev => [...prev, aiMessage]);
+    //                     console.error(err);
+    //                     toast.error("Error fetching response from AI");
+    //                 }finally{
+    //                     setIsProcessing(false);
+    //                 }
+    //             }
+    //         } else {
+    //             // Fetch data based on id
+    //             toast.error("Need to fetch message history.");
+    //             setIsProcessing(false);
+    //         }
+    //     }
+    //     setIsProcessing(true);
+    //     fetch();
+    // }, [id, location.state])
 
     useEffect(() => {
         const handleEscapeDuringDrop = (e) => {
@@ -87,16 +89,18 @@ function ChatPage() {
 
             //reset values and update sidebar files
             setUserInput("");
-            setFiles([]);
             setAllActiveFiles(old => [...old, ...files]);
+            setFiles([]);
 
-            const payload = {
-                input: userInput,
-                files: files,
-            };
+            const data = new FormData();
+            data.append("data", JSON.stringify({ input: userInput }));
+            allActiveFiles.forEach((file, ind) => {
+                data.append(`file_${ind}`, file);
+            });
+            
 
             // we have to replace the URL below with your backend endpoint
-            const res = await axios.post("http://localhost:5000/chat", payload); // <-- paste correct link
+            const res = await axios.post("http://127.0.0.1:8000/api/query/", data, {headers: { "Content-Type": "multipart/form-data" }});
             const aiMessage = { id: Date.now() + 1, sender: "ai", text: res.data.reply };
             setMessages(prev => [...prev, aiMessage]);
         } catch (err) {

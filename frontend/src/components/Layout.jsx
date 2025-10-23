@@ -21,7 +21,7 @@ function Layout() {
 
                 {/* the page */}
                 <div className="flex flex-grow mx-auto w-3/4 max-w-[1280px]">
-                    <Outlet context={{setAllActiveFiles, isProcessing, setIsProcessing}}/>
+                    <Outlet context={{allActiveFiles, setAllActiveFiles, isProcessing, setIsProcessing}}/>
                 </div>
 
             </div>
