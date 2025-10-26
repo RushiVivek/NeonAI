@@ -20,48 +20,48 @@ function ChatPage() {
     const [displayDropItemsWrapper, setDisplayDropItemsWrapper] = useState(false);
     const { allActiveFiles, setAllActiveFiles, isProcessing, setIsProcessing } = useOutletContext();
 
-    // useEffect(() => {
-    //     const fetch = async () => {
-    //         //reset all params when changing the chat
-    //         setAllActiveFiles([]);
-    //         setMessages([]);
-    //         setFiles([]);
-    //         setUserInput("");
-    //         //send req to backend to fetch the message history and active files.
-    //         if (location.state && messages.length === 0) {
-    //             const data = location.state; // Retrieve the passed data
-    //             if (data?.input) {
-    //                 const newUserMessage = { id: Date.now(), sender: "user", text: data.input };
-    //                 setMessages(prev => [...prev, newUserMessage]);
-    //                 setAllActiveFiles([...data.files]);
-    //                 const data = new FormData();
-    //                 data.append("data", JSON.stringify({ input: data.input }));
-    //                 data.files.forEach((file, ind) => {
-    //                     data.append(`file_${ind}`, file);
-    //                 });
-    //                 try {
-    //                     // we have to replace the URL below with your backend endpoint
-    //                     const res = await axios.post("http://127.0.0.1:8000/api/query/", data, {headers: { "Content-Type": "multipart/form-data" }});
-    //                     const aiMessage = { id: Date.now() + 1, sender: "ai", text: res.data.reply };
-    //                     setMessages(prev => [...prev, aiMessage]);
-    //                 } catch (err) {
-    //                     const aiMessage = { id: Date.now() + 1, sender: "ai", text: "try again later" };
-    //                     setMessages(prev => [...prev, aiMessage]);
-    //                     console.error(err);
-    //                     toast.error("Error fetching response from AI");
-    //                 }finally{
-    //                     setIsProcessing(false);
-    //                 }
-    //             }
-    //         } else {
-    //             // Fetch data based on id
-    //             toast.error("Need to fetch message history.");
-    //             setIsProcessing(false);
-    //         }
-    //     }
-    //     setIsProcessing(true);
-    //     fetch();
-    // }, [id, location.state])
+    useEffect(() => {
+        const fetch = async () => {
+            //reset all params when changing the chat
+            setAllActiveFiles([]);
+            setMessages([]);
+            setFiles([]);
+            setUserInput("");
+            //send req to backend to fetch the message history and active files.
+            if (location.state && messages.length === 0) {
+                const data = location.state; // Retrieve the passed data
+                if (data?.input) {
+                    const newUserMessage = { id: Date.now(), sender: "user", text: data.input };
+                    setMessages(prev => [...prev, newUserMessage]);
+                    setAllActiveFiles([...data.files]);
+                    const data2 = new FormData();
+                    data2.append("data", JSON.stringify({ input: data.input }));
+                    data.files.forEach((file, ind) => {
+                        data2.append(`file_${ind}`, file);
+                    });
+                    try {
+                        // we have to replace the URL below with your backend endpoint
+                        const res = await axios.post("http://127.0.0.1:8000/api/query/", data2, {headers: { "Content-Type": "multipart/form-data" }});
+                        const aiMessage = { id: Date.now() + 1, sender: "ai", text: res.data.reply };
+                        setMessages(prev => [...prev, aiMessage]);
+                    } catch (err) {
+                        const aiMessage = { id: Date.now() + 1, sender: "ai", text: "try again later" };
+                        setMessages(prev => [...prev, aiMessage]);
+                        console.error(err);
+                        toast.error("Error fetching response from AI");
+                    }finally{
+                        setIsProcessing(false);
+                    }
+                }
+            } else {
+                // Fetch data based on id
+                toast.error("Need to fetch message history.");
+                setIsProcessing(false);
+            }
+        }
+        setIsProcessing(true);
+        fetch();
+    }, [id, location.state])
 
     useEffect(() => {
         const handleEscapeDuringDrop = (e) => {
