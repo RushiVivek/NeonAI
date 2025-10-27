@@ -20,7 +20,7 @@ function Layout() {
                 <Sidebar setShowSidebar={setShowSidebar} showSidebar={showSidebar} allActiveFiles={allActiveFiles} setAllActiveFiles={setAllActiveFiles} isProcessing={isProcessing} setIsProcessing={setIsProcessing}/>
 
                 {/* the page */}
-                <div className="flex flex-grow mx-auto w-3/4 max-w-[1280px]">
+                <div className={`flex flex-grow mx-auto w-3/4 max-w-[1280px] ${showSidebar ? "pl-[250px]" : null} transition-all`}>
                     <Outlet context={{allActiveFiles, setAllActiveFiles, isProcessing, setIsProcessing}}/>
                 </div>
 

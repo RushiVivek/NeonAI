@@ -100,7 +100,10 @@ function ChatPage() {
             
 
             // we have to replace the URL below with your backend endpoint
+            const loadingAIMessage = { id: Date.now() + 1, sender: "ai", text: "Generating result...", loadingMessage : true};
+            setMessages(prev => [...prev, loadingAIMessage]);
             const res = await axios.post("http://127.0.0.1:8000/api/query/", data, {headers: { "Content-Type": "multipart/form-data" }});
+            setMessages(old=>old.filter(x=>!x.loadingMessage));
             const aiMessage = { id: Date.now() + 1, sender: "ai", text: res.data.reply };
             setMessages(prev => [...prev, aiMessage]);
         } catch (err) {
@@ -167,18 +170,10 @@ function ChatPage() {
                 </div>
 
                 {/* chat exchange */}
-                <div className="flex flex-col px-4 w-full max-w-3xl pt-[50px] pb-[80px] gap-3 overflow-y-auto mx-auto">
+                <div className="flex flex-col px-2 w-full max-w-3xl pt-[50px] pb-[80px] gap-3 overflow-y-auto mx-auto">
                     {messages.map((msg) => (
-                        <div
-                            key={msg.id}
-                            className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
-                        >
-                            <div
-                                className={`max-w-[70%] px-4 py-2 rounded-xl ${msg.sender === "user"
-                                    ? "bg-blue-600 text-white"
-                                    : "bg-zinc-700 text-white"
-                                    }`}
-                            >
+                        <div key={msg.id} className={`flex text-left ${msg.sender === "user" ? "justify-end" : "justify-start"}`} >
+                            <div className={`max-w-[70%] px-4 py-2 rounded-xl ${msg.sender === "user" ? "bg-blue-600 text-white" : "bg-zinc-700 text-white" }`} >
                                 {msg.text}
                             </div>
                         </div>
@@ -216,7 +211,7 @@ function ChatPage() {
                     </div>
 
                     {/* input box */}
-                    <form onSubmit={handleSubmit} className="bg-zinc-700 rounded-xl px-2 py-2 flex items-center gap-2 w-3/4">
+                    <form onSubmit={handleSubmit} className="bg-zinc-700 rounded-xl px-2 py-2 flex items-center gap-2 w-19/20 xl:w-3/4">
 
                         <div className="relative group inline-block">
                             <button type="button" className="text-xl rounded-full p-1 hover:cursor-pointer hover:bg-zinc-600" onClick={handleAddFiles}>
