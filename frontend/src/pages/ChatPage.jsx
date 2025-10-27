@@ -15,41 +15,60 @@ function ChatPage() {
     const [messages, setMessages] = useState([]);
     const [userInput, setUserInput] = useState("");
     const [files, setFiles] = useState([]);
-    const [allfiles, setAllFiles] = useState([]);
+    const [filesUrls, setFilesUrls] = useState([]);
     const addFilesRef = useRef(null);
+    const inputRef = useRef(null);
+    const submitButtonRef = useRef(null);
     const [displayDropItemsWrapper, setDisplayDropItemsWrapper] = useState(false);
-    const { allActiveFiles, setAllActiveFiles, isProcessing, setIsProcessing } = useOutletContext();
+    const { allActiveFiles, setAllActiveFiles, isProcessing, setIsProcessing, setAllActiveFilesUrls } = useOutletContext();
+
+    useEffect(() => {
+        inputRef.current.focus();
+    }, [])
 
     useEffect(() => {
         const fetch = async () => {
             //reset all params when changing the chat
             setAllActiveFiles([]);
+            setAllActiveFilesUrls([]);
             setMessages([]);
             setFiles([]);
+            setFilesUrls([]);
             setUserInput("");
             //send req to backend to fetch the message history and active files.
             if (location.state && messages.length === 0) {
                 const data = location.state; // Retrieve the passed data
                 if (data?.input) {
+                    //Add the messages
                     const newUserMessage = { id: Date.now(), sender: "user", text: data.input };
                     setMessages(prev => [...prev, newUserMessage]);
+                    const loadingAIMessage = { id: Date.now() + 1, sender: "ai", text: "Generating result...", loadingMessage: true };
+                    setMessages(prev => [...prev, loadingAIMessage]);
+
+                    //Set the active files and their blob urls 
                     setAllActiveFiles([...data.files]);
+                    const urls = data.files.map(file => URL.createObjectURL(file));
+                    setAllActiveFilesUrls([...urls]);
+
+                    //pass the data to backend
                     const data2 = new FormData();
                     data2.append("data", JSON.stringify({ input: data.input }));
                     data.files.forEach((file, ind) => {
                         data2.append(`file_${ind}`, file);
                     });
                     try {
-                        // we have to replace the URL below with your backend endpoint
-                        const res = await axios.post("http://127.0.0.1:8000/api/query/", data2, {headers: { "Content-Type": "multipart/form-data" }});
+                        const res = await axios.post("http://127.0.0.1:8000/api/query/", data2, { headers: { "Content-Type": "multipart/form-data" } });
+                        //remove waiting message and put the correct ai reply
+                        setMessages(old => old.filter(x => !x.loadingMessage));
                         const aiMessage = { id: Date.now() + 1, sender: "ai", text: res.data.reply };
                         setMessages(prev => [...prev, aiMessage]);
                     } catch (err) {
-                        const aiMessage = { id: Date.now() + 1, sender: "ai", text: "try again later" };
+                        setMessages(old => old.filter(x => !x.loadingMessage));
+                        const aiMessage = { id: Date.now() + 1, sender: "ai", text: "something went wrong!" };
                         setMessages(prev => [...prev, aiMessage]);
                         console.error(err);
                         toast.error("Error fetching response from AI");
-                    }finally{
+                    } finally {
                         setIsProcessing(false);
                     }
                 }
@@ -66,10 +85,17 @@ function ChatPage() {
     useEffect(() => {
         const handleEscapeDuringDrop = (e) => {
             if (e.key === "Escape" && displayDropItemsWrapper) setDisplayDropItemsWrapper(false);
-        }
+        };
+        const handleEnter = (e) => {
+            if (e.key === 'Enter' && userInput.trim() !== '') submitButtonRef.current.click();
+        };
         window.addEventListener("keydown", handleEscapeDuringDrop);
-        return () => window.removeEventListener("keydown", handleEscapeDuringDrop);
-    }, [displayDropItemsWrapper]);
+        window.addEventListener("keydown", handleEnter);
+        return () => {
+            window.removeEventListener("keydown", handleEscapeDuringDrop);
+            window.removeEventListener("keydown", handleEnter);
+        }
+    }, [displayDropItemsWrapper, userInput]);
 
     const handleAddFiles = () => {
         addFilesRef.current.click();
@@ -91,22 +117,26 @@ function ChatPage() {
             setUserInput("");
             setAllActiveFiles(old => [...old, ...files]);
             setFiles([]);
+            setAllActiveFilesUrls(old => [...old, ...filesUrls]);
+            setFilesUrls([]);
 
+            //send data to the backend
             const data = new FormData();
             data.append("data", JSON.stringify({ input: userInput }));
             allActiveFiles.forEach((file, ind) => {
                 data.append(`file_${ind}`, file);
             });
-            
 
-            // we have to replace the URL below with your backend endpoint
-            const loadingAIMessage = { id: Date.now() + 1, sender: "ai", text: "Generating result...", loadingMessage : true};
+            //putting up psuedo "Loading" message and then removing it when AI's reply is available
+            const loadingAIMessage = { id: Date.now() + 1, sender: "ai", text: "Generating result...", loadingMessage: true };
             setMessages(prev => [...prev, loadingAIMessage]);
-            const res = await axios.post("http://127.0.0.1:8000/api/query/", data, {headers: { "Content-Type": "multipart/form-data" }});
-            setMessages(old=>old.filter(x=>!x.loadingMessage));
+            const res = await axios.post("http://127.0.0.1:8000/api/query/", data, { headers: { "Content-Type": "multipart/form-data" } });
+            setMessages(old => old.filter(x => !x.loadingMessage));
             const aiMessage = { id: Date.now() + 1, sender: "ai", text: res.data.reply };
             setMessages(prev => [...prev, aiMessage]);
+
         } catch (err) {
+            setMessages(old => old.filter(x => !x.loadingMessage));
             const aiMessage = { id: Date.now() + 1, sender: "ai", text: "try again later" };
             setMessages(prev => [...prev, aiMessage]);
             console.error(err);
@@ -125,6 +155,7 @@ function ChatPage() {
         //validation
         const selectedFiles = Array.from(e.target.files);
         const validFiles = selectedFiles.filter(file => isValidFile(file));
+        const currFilesUrls = validFiles.map(file => URL.createObjectURL(file));
         if (validFiles.length < selectedFiles.length) {
             toast.error("Only images, audio, and PDFs are allowed.");
             return;
@@ -132,9 +163,11 @@ function ChatPage() {
 
         //updating files
         setFiles(old => [...old, ...validFiles]);
+        setFilesUrls(old => [...old, ...currFilesUrls]);
     }
 
     const removeFile = (tgt) => {
+        setFilesUrls(old => old.filer((url, ind) => ind != tgt));
         setFiles(old => old.filter((file, ind) => ind != tgt));
     }
 
@@ -142,11 +175,12 @@ function ChatPage() {
 
     const handleDrop = (e) => {
         e.preventDefault();
-
         setDisplayDropItemsWrapper(false);
+
         //validate the dropped files
         const droppedFiles = Array.from(e.dataTransfer.files);
         const valid = droppedFiles.filter(isValidFile);
+        const currFilesUrls = droppedFiles.map(file => URL.createObjectURL(file));
         if (valid.length < droppedFiles.length) {
             toast.error("Only images, audio, and PDFs are allowed.");
             return;
@@ -154,9 +188,10 @@ function ChatPage() {
 
         //update the files
         setFiles((old) => [...old, ...valid]);
+        setFilesUrls((old) => [...old, ...currFilesUrls]);
     };
 
-    //One error is that if file is dragged on and out then the wrapper remains. how to fix it?
+    //One error is that if file is dragged on and out then the wrapper remains. how to fix it?    
 
     return (
         <>
@@ -172,8 +207,8 @@ function ChatPage() {
                 {/* chat exchange */}
                 <div className="flex flex-col px-2 w-full max-w-3xl pt-[50px] pb-[80px] gap-3 overflow-y-auto mx-auto">
                     {messages.map((msg) => (
-                        <div key={msg.id} className={`flex text-left ${msg.sender === "user" ? "justify-end" : "justify-start"}`} >
-                            <div className={`max-w-[70%] px-4 py-2 rounded-xl ${msg.sender === "user" ? "bg-blue-600 text-white" : "bg-zinc-700 text-white" }`} >
+                        <div key={msg.id} className={`flex text-left ${msg.sender === "user" ? "justify-end" : "justify-start"} ${msg.loadingMessage ? "animate-pulse" : null}`} >
+                            <div className={`max-w-[70%] px-4 py-2 rounded-xl ${msg.sender === "user" ? "bg-blue-600 text-white" : "bg-zinc-700 text-white"}`} >
                                 {msg.text}
                             </div>
                         </div>
@@ -191,7 +226,7 @@ function ChatPage() {
                                     <div key={ind} className="relative flex justify-start items-center rounded-xl overflow-hidden">
                                         {
                                             (file.type.startsWith("image/")) ?
-                                                <img className="h-[60px] w-[80px] object-cover" src={URL.createObjectURL(file)} alt={file.name} draggable={false} />
+                                                <img className="h-[60px] w-[80px] object-cover" src={filesUrls[ind]} alt={file.name} draggable={false} />
                                                 :
                                                 <div className="h-[60px] w-[180px] bg-zinc-700 flex gap-2 items-center px-2">
                                                     <div className="bg-red-600 text-2xl p-1 rounded-lg">
@@ -224,10 +259,10 @@ function ChatPage() {
 
                         <input type="file" name="files" id="files" ref={addFilesRef} multiple accept="image/*, audio/*, .pdf" hidden={true} onChange={updFiles} />
 
-                        <input type="text" name="userInput" id="userInput" className="flex-1 outline-none" onChange={updInput} value={userInput} />
+                        <input type="text" ref={inputRef} name="userInput" id="userInput" className="flex-1 outline-none" autoComplete="off" onChange={updInput} value={userInput} />
 
                         <div className="relative group inline-block">
-                            <button className="text-lg rounded-sm p-1 hover:cursor-pointer hover:bg-zinc-600" >
+                            <button ref={submitButtonRef} className="text-lg rounded-sm p-1 hover:cursor-pointer hover:bg-zinc-600" >
                                 <IoSend />
                             </button>
                             <span className="absolute left-1/2 -translate-y-15 -translate-x-1/2 mt-1 hidden group-hover:block bg-zinc-900/60 text-white text-[13px] px-2 py-1 rounded">

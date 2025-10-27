@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react"
 import { useNavigate, useOutletContext } from "react-router";
 import { IoSend } from "react-icons/io5";
 import { AiOutlinePlus } from "react-icons/ai";
-import axios from "axios";
 import { LuAudioLines } from "react-icons/lu";
 import { BsFiletypePdf } from "react-icons/bs";
 import { MdCancel } from "react-icons/md";
@@ -12,35 +11,53 @@ function Home() {
 
     const [userInput, setUserInput] = useState("");
     const [files, setFiles] = useState([]);
+    const [filesUrls, setFilesUrls] = useState([]);
     const addFilesRef = useRef(null);
+    const inputRef = useRef(null);
+    const submitButtonRef = useRef(null);
     const [displayDropItemsWrapper, setDisplayDropItemsWrapper] = useState(false);
     const nav = useNavigate();
+    const { setAllActiveFiles, setIsProcessing, setAllActiveFilesUrls } = useOutletContext();
+
+    useEffect(() => {
+        setUserInput("");
+        inputRef.current.focus();
+        setFiles([]); setFilesUrls([]);
+        setAllActiveFiles([]); setAllActiveFilesUrls([]);
+        setIsProcessing(false);
+    }, [])
 
     useEffect(() => {
         const handleEscapeDuringDrop = (e) => {
             if (e.key === "Escape" && displayDropItemsWrapper) setDisplayDropItemsWrapper(false);
         }
+        const handleEnter = (e) => {
+            if (e.key === 'Enter' && userInput.trim() !== '') submitButtonRef.current.click();
+        };
         window.addEventListener("keydown", handleEscapeDuringDrop);
-        return () => window.removeEventListener("keydown", handleEscapeDuringDrop);
-    }, [displayDropItemsWrapper]);
+        window.addEventListener("keydown", handleEnter);
+        return () => {
+            window.removeEventListener("keydown", handleEscapeDuringDrop);
+            window.removeEventListener("keydown", handleEnter);
+        }
+    }, [displayDropItemsWrapper,userInput]);
 
     const updInput = (e) => { setUserInput(e.target.value); }
-    
+
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!userInput.trim()) return;
-        
+
         //generate a seperate chat and navigate to it also send the users message.
         const payload = {
             input: userInput,
             files: files,
         }
-        // axios.post(import.meta.env.BACKEND_URL, payload);
-        
+
         const id = Math.floor(Math.random() * 100000);
-        nav(`/c/${id}`, {state:payload});
+        nav(`/c/${id}`, { state: payload });
     }
-    
+
     //files upload and removing handling
 
     const handleAddFiles = () => { addFilesRef.current.click(); }
@@ -55,6 +72,7 @@ function Home() {
         //validation
         const selectedFiles = Array.from(e.target.files);
         const validFiles = selectedFiles.filter(file => isValidFile(file));
+        const currFilesUrls = validFiles.map(file => URL.createObjectURL(file));
         if (validFiles.length < selectedFiles.length) {
             toast.error("Only images, audio, and PDFs are allowed.");
             return;
@@ -62,9 +80,13 @@ function Home() {
 
         //updating files
         setFiles(old => [...old, ...validFiles]);
+        setFilesUrls(old => [...old, ...currFilesUrls]);
     }
 
-    const removeFile = (tgt) => { setFiles(old => old.filter((file, ind) => ind != tgt)); }
+    const removeFile = (tgt) => {
+        setFiles(old => old.filter((file, ind) => ind != tgt));
+        setFilesUrls(old => old.filter((url, ind) => ind != tgt));
+    }
 
     //drag and drop of files
 
@@ -111,7 +133,7 @@ function Home() {
                                 <div key={ind} className="relative flex justify-start items-center rounded-xl overflow-hidden">
                                     {
                                         (file.type.startsWith("image/")) ?
-                                            <img className="h-[60px] w-[80px] object-cover" src={URL.createObjectURL(file)} alt={file.name} draggable={false} />
+                                            <img className="h-[60px] w-[80px] object-cover" src={filesUrls[ind]} alt={file.name} draggable={false} />
                                             :
                                             <div className="h-[60px] w-[180px] bg-zinc-700 flex gap-2 items-center px-2">
                                                 <div className="bg-red-600 text-2xl p-1 rounded-lg">
@@ -144,10 +166,10 @@ function Home() {
 
                     <input type="file" name="files" id="files" ref={addFilesRef} multiple accept="image/*, audio/*, .pdf" hidden={true} onChange={updFiles} />
 
-                    <input type="text" name="userInput" id="userInput" className="flex-1 outline-none" onChange={updInput} value={userInput} />
+                    <input ref={inputRef} type="text" autoComplete="off" name="userInput" id="userInput" className="flex-1 outline-none" onChange={updInput} value={userInput} />
 
                     <div className="relative group inline-block">
-                        <button className="text-lg rounded-sm p-1 hover:cursor-pointer hover:bg-zinc-600">
+                        <button ref={submitButtonRef} className="text-lg rounded-sm p-1 hover:cursor-pointer hover:bg-zinc-600">
                             <IoSend />
                         </button>
                         <span className="absolute left-1/2 -translate-y-15 -translate-x-1/2 mt-1 hidden group-hover:block bg-zinc-900/60 text-white text-[13px] px-2 py-1 rounded">

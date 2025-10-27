@@ -1,4 +1,20 @@
 @import "tailwindcss";
+@layer utilities {
+  .scrollbar::-webkit-scrollbar {
+    width: 7px;
+  }
+  .scrollbar::-webkit-scrollbar-track {
+    border-radius: 100vh;
+    background: #1a1a1c;
+  }
+  .scrollbar::-webkit-scrollbar-thumb {
+    background: #343437;
+    border-radius: 100vh;
+  }
+  .scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #3f3f47;
+  }
+}
 
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;

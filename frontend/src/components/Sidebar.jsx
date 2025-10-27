@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 import { MdExpandLess, MdExpandMore } from "react-icons/md";
 import { PiNotePencilDuotone } from "react-icons/pi";
 
-function Sidebar({ setShowSidebar, showSidebar, allActiveFiles, setAllActiveFiles, isProcessing, setIsProcessing }) {
+function Sidebar({ setShowSidebar, showSidebar, allActiveFiles, setAllActiveFiles, isProcessing, setIsProcessing, allActiveFilesUrls, setAllActiveFilesUrls }) {
 
     const id = useParams();
     const [showAllChats, setShowAllChats] = useState(true);
@@ -27,6 +27,8 @@ function Sidebar({ setShowSidebar, showSidebar, allActiveFiles, setAllActiveFile
             // console.log(err.details);
         } finally {
             setAllActiveFiles(old => old.filter((file, ind) => ind != tgt));
+            URL.revokeObjectURL(allActiveFilesUrls[tgt]);
+            setAllActiveFilesUrls(old => old.filter((url, ind) => ind != tgt));
             setIsProcessing(false);
         }
     }
@@ -58,7 +60,7 @@ function Sidebar({ setShowSidebar, showSidebar, allActiveFiles, setAllActiveFile
                                 </h1>
                                 {
                                     showAllActiveFiles &&
-                                    <div className="flex flex-col gap-2 max-h-[350px] overflow-y-auto">
+                                    <div className="flex flex-col gap-2 max-h-[350px] overflow-y-auto scrollbar">
                                         {
                                             allActiveFiles.length > 0 &&
                                             allActiveFiles.map((file, ind) => {
@@ -67,7 +69,7 @@ function Sidebar({ setShowSidebar, showSidebar, allActiveFiles, setAllActiveFile
                                                         <div className="h-[60px] w-full bg-zinc-700 flex gap-2 items-center px-2 mr-1 rounded-lg">
                                                             {
                                                                 (file.type.startsWith("image/")) ?
-                                                                    <img className="h-[55px] w-[80px] object-cover" src={URL.createObjectURL(file)} alt={file.name} draggable={false} />
+                                                                    <img className="h-[55px] w-[80px] object-cover" src={allActiveFilesUrls[ind]} alt={file.name} draggable={false} />
                                                                     :
                                                                     <div className="bg-red-600 text-2xl p-1 rounded-lg">
                                                                         {file.type.startsWith("audio/") ? <LuAudioLines /> : <BsFiletypePdf />}
@@ -97,7 +99,7 @@ function Sidebar({ setShowSidebar, showSidebar, allActiveFiles, setAllActiveFile
                             </h1>
                             {
                                 showAllChats &&
-                                <div className="flex-1 flex flex-col gap-1 overflow-y-auto">
+                                <div className="flex-1 flex flex-col gap-1 overflow-y-auto scrollbar">
                                     <Link className="text-sm" to="/c/1">display chat1</Link>
                                     <Link className="text-sm" to="/c/2">display chat2</Link>
                                     <Link className="text-sm" to="/c/2">display chat3</Link>
